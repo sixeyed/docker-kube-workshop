@@ -1,0 +1,10 @@
+version: '3.5'
+
+services:
+
+  nginx2:
+    image: nginx:1.13-alpine
+    ports:
+     - "8083:80"
+    deploy:
+      replicas: 2
