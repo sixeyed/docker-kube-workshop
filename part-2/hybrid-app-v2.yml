@@ -1,0 +1,38 @@
+version: '3.3'
+
+services:
+
+  database:
+    image: dockersamples/hybrid-app-db
+    environment:
+      MYSQL_ROOT_PASSWORD: DockerCon!!!
+    ports:
+    - published: 3306
+      target: 3306
+    networks:
+    - back-tier
+
+  dotnet-api:
+    image: dockersamples/hybrid-app-api:dotnet
+    ports:
+    - published: 57989
+      target: 80
+    networks:
+    - back-tier
+
+  java-app:
+    image: dockersamples/hybrid-app-web:v2
+    environment:
+      BASEURI: http://dotnet-api/api/users
+    ports:
+    - published: 8000
+      target: 8000
+    - published: 8080
+      target: 8080
+    networks:
+    - back-tier
+    - front-tier
+
+networks:
+  back-tier:
+  front-tier:
