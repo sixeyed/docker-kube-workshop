@@ -4,7 +4,23 @@
 
 PWD intro
 
+Setup:
+
+```
+mkdir scm
+
+cd scm
+
+git clone https://github.com/dockersamples/hybrid-app.git
+
+git clone https://github.com/sixeyed/docker-kube-workshop.git
+```
+
 ## Docker Trusted Registry
+
+enable scanning:
+
+![](./img/part-2/dtr-enable-image-scanning.jpg)
 
 1.0 in UI:
 
@@ -50,29 +66,52 @@ export DTR_API_KEY=<your-api-key>
 ```
 
 ```
-chmod +x ./part-2/dtr-01-create-repos.sh
-./part-2/dtr-01-create-repos.sh
-```
+cd ~/scm/docker-kube-workshop
 
-```
-chmod +x ./part-2/dtr-02-set-repo-access.sh
+./part-2/dtr-01-create-repos.sh
+
 ./part-2/dtr-02-set-repo-access.sh
 ```
 
 1.2 build & push
 
 ```
-git clone...
-cd ...
+cd ~/scm/hybrid-app/scripts
+
 ./scripts/01-build.sh
+```
+
+Login with your human account:
+
+```
+docker login $DTR_HOST
+
 ./scripts/02-ship.sh
 ```
 
-> TODO - DTR image pic
+> FAIL! The human does not have permissions to push images
+
+Now log in as Jenkins (in the real world, the CI user credentials would be secrets stored in Jenkins):
+
+```
+docker login $DTR_HOST --username jenkins
+
+./scripts/02-ship.sh
+```
+
+![](./img/part-2/pwd-push-to-dtr.jpg)
+
+![](./img/part-2/dtr-image-pushed.jpg)
 
 ## Universal Control Plane
 
-* deploy v1 as kube
+* deploy v1 as kube stack
+
+Inject DTR name:
+
+```
+docker-compose -f hybrid-app-v1/yml config > hybrid-app-v1-dtr.yml
+```
 
 ![](./img/part-2/ucp-create-stack.jpg)
 
@@ -104,9 +143,20 @@ cd ...
 
 * download client bundle to laptop
 
-![](./img/part-2/ucp-container-logs.jpg)
+![](./img/part-2/ucp-user-profile.jpg)
 
-![](./img/part-2/ucp-container-logs-2.jpg)
+![](./img/part-2/ucp-user-profile-2.jpg)
 
-* cat kube.yml
+```
+cat env.sh
+
+cat kube.yml
+
+eval "$(<env.sh)"
+```
+
 * kubectl get all, logs, exec
+
+```
+
+```

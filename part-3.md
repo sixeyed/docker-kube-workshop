@@ -1,9 +1,32 @@
 # The Secure Software Supply Chain with Kubernetes and Docker EE
 
+setup
+
+* delete stack in ucp
+* create namespace in Kube
+
+```
+kubectl create namespace hybrid-app
+```
+
 dtr
 
 * promotion policies
+
+- new org `production`
+- new repo `hybrid-app-db`
+
+![]()
+
 * scanning
+
+- push updated db
+
+```
+docker image build --tag $DTR_HOST/dockersamples/hybrid-app-db:v2 --file ./Dockerfile.v2
+
+docker image push $DTR_HOST/dockersamples/hybrid-app-db:v2
+```
 
 ucp
 
