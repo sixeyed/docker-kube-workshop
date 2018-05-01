@@ -19,8 +19,8 @@ In this part of the workshop you'll start using Docker Trusted Registry (DTR) an
 
 * [1. Set up your PWD environment](#1)
 * [2. Store images using Docker Trusted Registry](#2)
-* [3. Deploy the application using Universal Control Plane](#3)
-* [4. Run a local Docker Registry using Helm](#4)
+* [3. Deploy and upgrade application using Universal Control Plane](#3)
+* [4. Manage Kubernetes on Docker EE from Docker for Mac and Docker for Windows](#4)
 
 ## <a name="1"></a> 1 - Set up your PWD environment
 
@@ -225,14 +225,18 @@ Switch back to the DTR UI, open one of the repositories and click _Images_ in th
 
 ![](./img/part-2/dtr-image-pushed.jpg)
 
-## <a name="3"></a> 3 - Deploy the application using Universal Control Plane
+## <a name="3"></a> 3 - Deploy and upgrade an application using Universal Control Plane
 
 In Part 1 you deployed applications as Docker stakcs running on Kubernetes in your local Docker environment. Docker EE supports the same functionality using Universal Control Plane. In this section you'll deploy the hybrid app to Kubernetes on UCP, using a Docker Compose file.
 
-There's a
+There's a [compose file for V1 of the app](part-2/hybrid-app-v1.yml), where the Java web app connects directly to the MySQL database. The compose file uses an environment variable for the DTR host, so first youi need to use `docker-compoose config` to evaluate the variable.
+
+On your worker3 node run:
 
 ```
-docker-compose -f hybrid-app-v1/yml config > hybrid-app-v1-dtr.yml
+cd ~/scm/docker-kube-workshop/part-2
+
+docker-compose -f hybrid-app-v1.yml config > hybrid-app-v1-dtr.yml
 ```
 
 ![](./img/part-2/ucp-create-stack.jpg)
@@ -261,7 +265,7 @@ docker-compose -f hybrid-app-v1/yml config > hybrid-app-v1-dtr.yml
 
 ![](./img/part-2/ucp-container-logs-2.jpg)
 
-## Managing Kubernetes on Docker EE from Docker for Mac and Docker for Windows
+## Manage Kubernetes on Docker EE from Docker for Mac and Docker for Windows
 
 * download client bundle to laptop
 

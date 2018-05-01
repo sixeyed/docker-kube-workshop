@@ -3,7 +3,7 @@ version: '3.3'
 services:
 
   database:
-    image: {DTR_HOST}/dockersamples/hybrid-app-db
+    image: "${DTR_HOST}/dockersamples/hybrid-app-db"
     environment:
       MYSQL_ROOT_PASSWORD: DockerCon!!!
     ports:
@@ -13,7 +13,7 @@ services:
     - back-tier
 
   dotnet-api:
-    image: {DTR_HOST}/dockersamples/hybrid-app-api:dotnet
+    image: "${DTR_HOST}/dockersamples/hybrid-app-api:dotnet"
     ports:
     - published: 57989
       target: 80
@@ -21,7 +21,7 @@ services:
     - back-tier
 
   java-app:
-    image: {DTR_HOST}/dockersamples/hybrid-app-web:v2
+    image: "${DTR_HOST}/dockersamples/hybrid-app-web:v2"
     environment:
       BASEURI: http://dotnet-api/api/users
     ports:

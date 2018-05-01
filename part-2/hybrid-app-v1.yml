@@ -3,7 +3,7 @@ version: '3.3'
 services:
 
   database:
-    image: {DTR_HOST}/dockersamples/hybrid-app-db
+    image: "${DTR_HOST}/dockersamples/hybrid-app-db"
     environment:
       MYSQL_ROOT_PASSWORD: password
     ports:
@@ -13,7 +13,7 @@ services:
     - back-tier
 
   java-app:
-    image: {DTR_HOST}/dockersamples/hybrid-app-web:v1
+    image: "${DTR_HOST}/dockersamples/hybrid-app-web:v1"
     ports:
     - published: 8000
       target: 8000
