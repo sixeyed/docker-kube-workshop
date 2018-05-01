@@ -24,9 +24,9 @@ In this part of the workshop you'll start using Docker Trusted Registry (DTR) an
 
 ## <a name="1"></a> 1 - Set up your PWD environment
 
-![](./images/pwd_screen.png)
+This lab is only available in a pre-arranged workshop. That may happen through a [Docker Meetup](https://events.docker.com/chapters/), a conference workshop, or an arrangements between Docker and your company. The workshop leader will provide you with the URL to a workshop environment that includes [Docker EE](https://www.docker.com/enterprise-edition):
 
-This lab is only available in a pre-arranged workshop. That may happen through a [Docker Meetup](https://events.docker.com/chapters/), a conference workshop, or an arrangements between Docker and your company. The workshop leader will provide you with the URL to a workshop environment that includes [Docker EE](https://www.docker.com/enterprise-edition).
+![](img/part-2/pwd-home.jpg)
 
 There are three main components to the Play With Docker (PWD) interface.
 
@@ -378,4 +378,4 @@ java-app     1         1         1            1           26m
 
 ## Up Next
 
-On to [Part 3](./part-2.md) where we'll look at securing deployments with Docker EE, including image management with DTR and role-based access control in UCP.
+On to [Part 3](./part-3.md) where we'll look at securing deployments with Docker EE, including image management with DTR and role-based access control in UCP.
