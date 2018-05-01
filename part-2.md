@@ -229,6 +229,8 @@ Switch back to the DTR UI, open one of the repositories and click _Images_ in th
 
 In Part 1 you deployed applications as Docker stakcs running on Kubernetes in your local Docker environment. Docker EE supports the same functionality using Universal Control Plane. In this section you'll deploy the hybrid app to Kubernetes on UCP, using a Docker Compose file.
 
+### 3.1 - Deploy V1 of the app to Kubernetes
+
 There's a [compose file for V1 of the app](part-2/hybrid-app-v1.yml), where the Java web app connects directly to the MySQL database. The compose file uses an environment variable for the DTR host, so first youi need to use `docker-compoose config` to evaluate the variable.
 
 On your worker3 node run:
@@ -236,53 +238,144 @@ On your worker3 node run:
 ```
 cd ~/scm/docker-kube-workshop/part-2
 
-docker-compose -f hybrid-app-v1.yml config > hybrid-app-v1-dtr.yml
+docker-compose -f hybrid-app-v1.yml config > hybrid-app-v1-stack.yml
 ```
+
+Check out the new stack file and you'll see the image names have been expanded with your DTR host:
+
+```
+cat hybrid-app-v1-stack.yml
+```
+
+Select the whole of the stack file and copy it to the clipboard.
+
+Now switch to your UCP tab and and select _Shares Resources...Stacks_ form the left nav. Click on _Create stack_:
 
 ![](./img/part-2/ucp-create-stack.jpg)
 
+Now deploy the V1 stack file as a stack on Kubernetes, using the following configuration:
+
+* _Name_: `hybrid-app`
+* _Mode_: `Kubernetes Workloads`
+* _Namespace_: `default`
+
+Then paste the V1 stack file contents into the compose pane and click _Create_:
+
 ![](./img/part-2/ucp-create-stack-2.jpg)
 
-* check app via load balancer
+The app deploys to Kubernetes, creating services and pods for the database and the web app.
+
+### 3.2 - Check V1 of the app
+
+You can see the application containers in the _Shared Resources_ section of UCP, and the deployed resources from the _Kubernetes_ section in the left nav of UCP.
+
+Open _Kubernetes...Load Balancers_ in the left nav and you'll see the public port where the app is accessible, under the `java-app-published` service:
 
 ![](./img/part-2/ucp-kube-load-balancers.jpg)
 
+Click the link where the target port is `8080`, and then browse to `/java-web/` on that URL. You'll see the homepage for the app:
+
 ![](./img/part-2/signup-homepage.jpg)
 
-* configure stack, deploy v2
+Next you'll upgrade the app, adding a REST API which the web app uses to access the database.
+
+### 3.2 - Deploy V2 of the app by upgrading the stack
+
+You'll need to use Docker Compose again to expand the DTR hostname in the compose file for V2 of the app.
+
+On your worker3 node run:
+
+```
+cd ~/scm/docker-kube-workshop/part-2
+
+docker-compose -f hybrid-app-v2.yml config > hybrid-app-v2-stack.yml
+
+cat hybrid-app-v2-stack.yml
+```
+
+Copy the whole of the V2 stack file to the clipboard, then switch back to UCP.
+
+Open _Stacks_ from the _Shared Resources_ panel in the left nav, select the `default/hybrid-app` stack and click _Configure_:
 
 ![](./img/part-2/ucp-stack-configure.jpg)
 
+You upgrade the application by applying a new stack defintion, so paste the V2 stack into the compose pane and click _Save_:
+
 ![](./img/part-2/ucp-stack-configure-2.jpg)
+
+Switch to the _Kubernetes...Pods_ list in the left nav and you'll see you now have a .NET API pod along with the MySQL database and Java web pods:
 
 ![](./img/part-2/ucp-kube-pods.jpg)
 
+Back in the _Kubernetes...Load Balancers_ list you can navigate to the Java web app service (the .NET API service is also publicly available):
+
 ![](./img/part-2/ucp-kube-load-balancers-v2.jpg)
 
-* check app
+The .NET API writes some basic log entries when it starts. You manage containers in UCP in the same way, whether they're in Kubernetes pods on Linux nodes, or swarm containers on Windows nodes.
+
+From _Shared Resources...Containers_ you see the list of running containers, you can select the .NET API and click _View Logs_:
 
 ![](./img/part-2/ucp-container-logs.jpg)
 
+The app logs are shown here, and from the container list you can also connect to the container to enter a shell session:
+
 ![](./img/part-2/ucp-container-logs-2.jpg)
 
-## Manage Kubernetes on Docker EE from Docker for Mac and Docker for Windows
+## <a name="3"></a> 4 - Manage Kubernetes on Docker EE from Docker for Mac and Docker for Windows
 
-* download client bundle to laptop
+You can remotely manage your Docker EE cluster by downloading a client bundle from UCP. Communication between your client and UCP is secured with mutual TLS, and the client bundle contains certificates and setup scripts.
+
+In UCP click your username in the left nav and select _My Profile_:
 
 ![](./img/part-2/ucp-user-profile.jpg)
 
+Click _New Client Bundle_ and then _Generate Bundle_ to create a client bundle which gets downloaded to your machine:
+
 ![](./img/part-2/ucp-user-profile-2.jpg)
+
+On your laptop, expand the ZIP file, open a terminal window and browse to the client bundle folder. You'll see a set of certificate and script files:
+
+```
+$ pwd
+/Users/elton/Downloads/ucp-bundle-admin
+$ tree
+.
+├── ca.pem
+├── cert.pem
+├── cert.pub
+├── env.cmd
+├── env.ps1
+├── env.sh
+├── key.pem
+└── kube.yml
+
+0 directories, 8 files
+```
+
+Check the contents of the `env.sh` and `kube.yml` files and you'll see that they set the configuration for the Docker CLI and `kubectl` to securely connect to your UCP instance:
 
 ```
 cat env.sh
 
 cat kube.yml
+```
 
+Run the environment script, and your local CLI is now connected to the remote UCP instance - for both `docker` and `kubectl` commands:
+
+```
 eval "$(<env.sh)"
 ```
 
-* kubectl get all, logs, exec
+You can run all the usual Kubernetes commands to work with resources in UCP:
 
 ```
-
+$ kubectl get deployment
+NAME         DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+database     1         1         1            1           26m
+dotnet-api   1         1         1            1           15m
+java-app     1         1         1            1           26m
 ```
+
+## Up Next
+
+On to [Part 3](./part-2.md) where we'll look at securing deployments with Docker EE, including image management with DTR and role-based access control in UCP.
