@@ -10,10 +10,10 @@ In this part of the workshop you'll start using Docker Trusted Registry (DTR) an
 
 ## Goals
 
-* Run Kubernetes with Docker for Mac or Docker for Windows
-* Deploy and manage stateless and stateful applications
-* Deploy apps to Kubernetes using Kube manifests and Docker Compose files
-* Deploy and use a local Docker Registry using Helm
+* Run Kubernetes on Docker EE with Universal Control Plane (UCP)
+* Configure repositories and store images in Docker Trusted Registry (DTR)
+* Deploy Docker stacks to Kubernetes using UCP with images in DTR
+* Manage remote Kubernetes deployments on Docker EE from your laptop
 
 ## Steps
 

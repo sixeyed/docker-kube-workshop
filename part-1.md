@@ -22,20 +22,22 @@ Kubernetes support in Docker for Mac and Docker for Windows is currently in beta
 
 ### 1.1 - Install Docker
 
-Install [Docker for Mac]() or [Docker for Windows](), using the Edge release channel.
+Install [Docker for Mac](https://store.docker.com/editions/community/docker-ce-desktop-mac) or [Docker for Windows](https://store.docker.com/editions/community/docker-ce-desktop-windows).
+
+> Make sure you select the Edge release channel. Kubernetes in Docker for Mac & Windows is currently a beta feature.
 
 ### 1.2 - Install Tools
 
-We'll also use a couple of tools in this part of the workshop, which you'll need to install if you don't already have them - [jq]() and [Helm]().
+We'll also use a couple of tools in this part of the workshop, which you'll need to install if you don't already have them - [jq](https://stedolan.github.io/jq/) and [Helm](https://helm.sh).
 
-> On Mac you can install these with [Brew]():
+> On Mac you can install these with [Homebrew](https://brew.sh):
 
 ```
 brew install jq
 brew install kubernetes-helm
 ```
 
-> On Windows you can install them with [Chocolatey]():
+> On Windows you can install them with [Chocolatey](https://chocolatey.org):
 
 ```
 choco install jq
@@ -50,9 +52,7 @@ We'll run a local Docker Registry in Kubernetes during the workshop. The registr
 
 ![](img/part-1/d4m-insecure-registries.jpg)
 
-> On Windows open _Settings...Daemon_ and add `docker.for.win.localhost:5000` as an insecure registry:
-
-![](img/part-1/d4w-insecure-registries.jpg)
+> On Windows open _Settings...Daemon_ and add `docker.for.win.localhost:5000` as an insecure registry.
 
 ### 1.4 - Setup Kubernetes
 
@@ -62,9 +62,7 @@ Kubernetes is an optional feature in Docker for Mac and Docker for Windows. Dock
 
 ![](img/part-1/d4m-enable-kube.jpg)
 
-> On Docker for Windows first make sure you are in Linux containers mode. Then open _Settings...Kubernetes_ and select _Enable Kubernetes_:
-
-![](img/part-1/d4w-enable-kube.jpg)
+> On Docker for Windows first make sure you are in Linux containers mode. Then open _Settings...Kubernetes_ and select _Enable Kubernetes_.
 
 You will see that Kubernetes is starting. It will take a few minutes to download and run all the components. When the Kubernetes and Docker lights are both green, you have Kubernetes running on your laptop, powered by the latets Docker engine!
 

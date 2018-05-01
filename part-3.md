@@ -1,4 +1,4 @@
-# The Secure Software Supply Chain with Kubernetes and Docker EE
+# Part 3 - The Secure Software Supply Chain with Kubernetes and Docker EE
 
 Docker EE is a production-grade container platform which supports a secure software supply chain.
 
@@ -8,10 +8,9 @@ In this part of the workshop you'll learn how the secure supply chain works in D
 
 ## Goals
 
-* Run Kubernetes with Docker for Mac or Docker for Windows
-* Deploy and manage stateless and stateful applications
-* Deploy apps to Kubernetes using Kube manifests and Docker Compose files
-* Deploy and use a local Docker Registry using Helm
+* Understand how DTR features let you sceure your application images
+* Use role-based access control in UCP to secure access to your cluster
+* Learn how Docker content trust and image signing enforce audit policies
 
 ## Steps
 
@@ -43,9 +42,7 @@ With so many vulnerabilities, you may not want this version of the app to go to 
 
 Image promotion works by copying an image from one repository to another repository, if it matches rules which you specify.
 
-You can use image promotion to copy images from the repository where your CI pushes them, to a repository which you use for production.
-
-No users have push access to the production repositories, so images can only get there if they pass the promotion rules.
+You can use image promotion to copy images from the repository where your CI pushes them, to a repository which you use for production. You set up your production repositories so that users have push access, so images can only get there if they pass the promotion rules ands are promoted by DTR.
 
 Create a new organization in DTR which will be where images for production deployment get stored:
 
@@ -55,17 +52,26 @@ And in that organization create a repository for the `hybrid-app-web` web front-
 
 ![](img/part-3/dtr-production-repo.jpg)
 
-* new policy
+Add a new promotion policy:
 
 ![](img/part-3/dtr-new-promotion-policy.jpg)
 
-* add tag name & critical vuln:
+And specify two criteria:
+
+* _Tag name_ must contain the string `v`
+* _Critical vulnerabilities_ must be less than or equal to `5`
 
 ![](img/part-3/dtr-new-promotion-policy-2.jpg)
 
 Click _Save & apply_ to enforce the promotion rules.
 
 ### 1.3 - Build and push a more secure Java image
+
+The base image for the Java app has a lot of vulnerabilites in the OS layers. We can use a slimmer base image like Alpine to reduce the attack surface, and that will have fewer vulnerabilities.
+
+Start by building a new version of the application image, using a Dockerfile which has the same content except for the bade Java image.
+
+On your `worker3` terminal session:
 
 ```
 cd ~/scm/hybrid-app/java-app-v2
@@ -75,17 +81,21 @@ docker image build --tag $DTR_HOST/dockersamples/hybrid-app-web:v2-alpine --file
 docker image push $DTR_HOST/dockersamples/hybrid-app-web:v2-alpine
 ```
 
+You'll see the new image being pushed to DTR:
+
 ![](img/part-3/pwd-push-alpine-image.jpg)
 
-In DTR you can see that the new image is being scanned:
+In DTR you can see that the new image is being scanned, because the repository was created with the _Scan on push_ setting enabled:
 
 ![](img/part-3/dtr-image-scanning.jpg)
 
 When the scan completes, the promotion rules will be evaluated.
 
-This new version has far fewer vulnerabilities - only 1 critical - and it has a version number in the image tag, so it passes the promotion policies.
+This new version has far fewer vulnerabilities - only 4 critical :) - and it has a version number in the image tag, so it passes the promotion policies:
 
 ![](img/part-3/dtr-promotions.jpg)
+
+Open the `production/hybrid-app-web` repository and you'll see an image in there which has been promoted from the source repo:
 
 ![](img/part-3/dtr-promotions-2.jpg)
 
@@ -147,7 +157,7 @@ Select the new `tester` user to add them to the `testers` team:
 
 ![](img/part-3/ucp-team-add-users-2.jpg)
 
-You can browse back to DTR now and you'll see the `testers` team exists in DTR, but the users don't have access to any of the `dockersamples` repositories:
+The new user is now a member of the new team in the organization. You can browse back to DTR now and you'll see the `testers` team exists in DTR, but the users don't have access to any of the `dockersamples` repositories:
 
 ![](img/part-3/dtr-new-team-no-repos.jpg)
 
@@ -155,41 +165,59 @@ You can browse back to DTR now and you'll see the `testers` team exists in DTR, 
 
 RBAC is applied in UCP by creating a **grant**, which defines how much access a subject has to a set of resources.
 
-The subject is a user or a team. The access is defined in a **role**. The resources are defined in a **collection**.
+The subject is a user, a team or a service account. The access is defined in a **role**. The resources are defined in a **collection**.
 
-You'll create grants and roles in UCP to give the test team the access they need.
+You'll create grants and roles in UCP to give the test team the access they need. Start by navigating to _User Managment...Grants_ in UCP and click _Create Grant_:
 
 ![](img/part-3/ucp-grants-create-grant.jpg)
 
+This grant will be for view-only access to the new Kubernetes namespace. Clicl _Namespaces_ and select `hybrid-app`:
+
 ![](img/part-3/ucp-grant-namespace.jpg)
+
+Now load the _Roles_ tab and select the built-in role `View Only`:
 
 ![](img/part-3/ucp-grant-namespace-2.jpg)
 
+Finally select the _Subjects_ tab to choose who this applies to. Select _Organizations_ and the `dockersamples` organization, and then the `testers` team:
+
 ![](img/part-3/ucp-grant-namespace-3.jpg)
 
-Click _Create_.
+Click _Create_. Now users in the test team have acces to view any resources in the Kuberetes namespace, but they cannot edit them.
 
-View only is a custom role, can also create your own for fine-grained permissions.
+`View Only` is a built-in role in UCP, and you can also create your own custom roles for fine-grained permissions.
+
+In the _Organizations and Teams...Roles_ tab, click _Create Role_:
 
 ![](img/part-3/ucp-roles-create-role.jpg)
 
+Give the custom role a name of `Node Manager`:
+
 ![](img/part-3/ucp-roles-create-role-2.jpg)
+
+And in the _Operations_ tab scroll down through the available options and select `All Node operations`:
 
 ![](img/part-3/ucp-roles-create-role-3.jpg)
 
-Click _Create_.
+Click _Create_. This role now has access to do any read and write operations on any node.
 
-Now add a grant for the new role to the testers team:
+> This is a very powerful role...
 
-* swarm...system
+Now add a grant for the new role to the testers team. In the _Resource Sets_ tab, click _Collections_ which gives you access to all the swarm and cluster resources. Select `Swarm` and then `System`:
 
 ![](img/part-3/ucp-grant-system.jpg)
 
+All the nodes in the cluster belong to the `System` cvollection by default. You can create custom collections and stripe your cluster in different ways if you need to.
+
+In the _Roles_ tab, select the new `Node Manager` role:
+
 ![](img/part-3/ucp-grant-system-2.jpg)
+
+And in the _Subjects_ tab select the `dockersamples` organization and the `testers` team:
 
 ![](img/part-3/ucp-grant-namespace-3.jpg)
 
-Now testers have permissions:
+Click _Create_ and now the test team have the permissions they need. Open _User Management...Grants_, and you'll see those grants for the `testers` team:
 
 ![](img/part-3/ucp-grants-testers.jpg)
 
