@@ -1,6 +1,6 @@
 # Part 1 - Kubernetes in Docker for Mac and Docker for Windows
 
-We'll start by getting Kubernetes running on your Mac on Windows machine. Docker for Mac and Docker for Windows provide a complete single-node Kubernetes environment. You can use all the usual Kubernetes objects - services, deployments, persistent voilumes - and all the usual Kube tools - like `kubectl` and Helm - and you can also deploy Docker Compose files as stacks running in Kubernetes.
+We'll start by getting Kubernetes running on your Mac on Windows machine. Docker for Mac and Docker for Windows provide a complete single-node certified Kubernetes environment. You can use all the usual Kubernetes objects - services, deployments, persistent volumes - and all the usual Kube tools - like `kubectl` and Helm - and you can also deploy Docker Compose files as stacks running in Kubernetes.
 
 ## Goals
 
@@ -18,13 +18,13 @@ We'll start by getting Kubernetes running on your Mac on Windows machine. Docker
 
 ## <a name="1"></a> Deploy Kubernetes
 
-Kubernetes support in Docker for Mac and Docker for Windows is currently in beta, so you need to be running the latest version. In this section you'll install and deploy Kubernetes on your laptop.
+Kubernetes support in Docker for Mac and Docker for Windows is currently in beta, so you need to be running the latest Edge version. In this section you'll install and deploy Kubernetes on your laptop.
 
 ### 1.1 - Install Docker
 
 Install [Docker for Mac](https://store.docker.com/editions/community/docker-ce-desktop-mac) or [Docker for Windows](https://store.docker.com/editions/community/docker-ce-desktop-windows).
 
-> Make sure you select the Edge release channel. Kubernetes in Docker for Mac & Windows is currently a beta feature.
+> Make sure you select the **Edge** release channel. Kubernetes in Docker for Mac & Windows is currently a beta feature.
 
 ### 1.2 - Install Tools
 
@@ -64,7 +64,7 @@ Kubernetes is an optional feature in Docker for Mac and Docker for Windows. Dock
 
 > On Docker for Windows first make sure you are in Linux containers mode. Then open _Settings...Kubernetes_ and select _Enable Kubernetes_.
 
-You will see that Kubernetes is starting. It will take a few minutes to download and run all the components. When the Kubernetes and Docker lights are both green, you have Kubernetes running on your laptop, powered by the latets Docker engine!
+You will see that Kubernetes is starting. It will take a few minutes to download and run all the components. When the Kubernetes and Docker lights are both green, you have Kubernetes running on your laptop, powered by the latest Docker engine!
 
 > Updating Docker will update Kubernetes. Right now it's at 1.9.6.
 
@@ -78,7 +78,7 @@ kubectl version
 kubectl get all
 ```
 
-The Docker client can also be used to deploy applications as stacks to Kubernetes. You configure the Docker CLI to use Kubernetes or Swarm by using the `DOCKER_ORCHESTRATOR` environment variable. The current mode is displayed with `docker version`:
+The Docker client can deploy applications as stacks to Kubernetes or to Docker Swarm. You configure the Docker CLI to switch between Kubernetes or Swarm by using the `DOCKER_ORCHESTRATOR` environment variable. The current mode is displayed with `docker version`:
 
 ```
 docker version -f '{{ .Client.Orchestrator }}'
@@ -98,7 +98,7 @@ kubectl apply -f ./part-1/nginx-deployment.yaml
 kubectl get all
 ```
 
-The deployment creates two pods each running a single Nginx container, and a service of type `LoadBalancer` which maps port `8081` on the host to the pod port `80`.
+The deployment creates two pods each running a single Nginx container, and a service of type `LoadBalancer` which maps port `8081` on the host to the pod port `80`. Docker for Mac and Windows creates a software load balancer which receives traffic on the host and distributes it to the pods.
 
 > Browse to [localhost:8081](http://localhost:8081) to see Nginx running.
 
@@ -121,7 +121,7 @@ kubectl exec -it $pod sh
 Now replace the content of the Nginx home page:
 
 ```
-echo '<h1>This is v3</h1>' > /usr/share/nginx/html
+echo '<h1>This is v3</h1>' > /usr/share/nginx/html/index.html
 
 exit
 ```
@@ -154,7 +154,7 @@ Now deploy the application as a Docker stack to Kubernetes:
 docker stack deploy -c ./part-1/nginx2-compose.yaml nginx2
 ```
 
-Docker generates a Kubernetes manifest from the compose file and creates is as a deployment. You can manage the top-level stack using Docker, and the lower-level Kubernetes objects using `kubectl`:
+Docker generates a Kubernetes manifest from the Docker Compose file and creates is as a deployment. You can manage the top-level stack using Docker, and the lower-level Kubernetes objects using `kubectl`:
 
 ```
 docker stack ls
@@ -192,7 +192,7 @@ curl -v http://localhost:8082
 
 ### 2.4 - Run Nginx as a load-balanced Docker stack on Docker swarm
 
-In the next part of the workshop you'll be using a Docker EE cluster, which runs multiple orchestrators - you can run apps in Docker swarm and in Kubernetes on the same cluster.
+In the next part of the workshop you'll be using a Docker EE cluster, which runs multiple orchestrators - you can run apps in Docker swarm and in Kubernetes **on the same cluster**.
 
 Docker for Mac and Docker for Windows also support running Docker swarm and Kubernetes side-by-side. You can initialize a single-node swarm and run a third Nginx deployment as a Docker swarm stack.
 
@@ -220,7 +220,7 @@ And check the Nginx version using `curl`:
 curl -v http://localhost:8083
 ```
 
-All the apps are running as containers on the same Docker engine, two of them as Dokcver stacks and the thirs as a Kuberneted deployment. You can view them all with the Docker command line:
+All the apps are running as containers on the same Docker engine, two of them as Docker stacks and the third as a Kubernetes deployment. You can view them all with the Docker command line:
 
 ```
 docker stack ls
@@ -250,7 +250,7 @@ docker stack rm nginx2
 kubectl get all
 ```
 
-The first app was a native Kube deployment, so you need to remove it using `kubectl`. Kubernetes leaves the service in place when you delete the deployment, so yoiu need to manually remove the service:
+The first app was a native Kube deployment, so you need to remove it using `kubectl`. Kubernetes leaves the service in place when you delete the deployment, so you need to also manually remove the service:
 
 ```
 kubectl delete deployment nginx-deployment
@@ -264,7 +264,7 @@ Your local Kubernetes cluster running on Docker supports persistent volumes, whi
 
 ### 3.1 - Deploy MySQL with a persistent volume
 
-The deployment manifest [mysql-deployment.yaml](part-1/mysql-deployment.yaml) runs creates a persistent volume and a service, and runs MySQL in a pod using a volume mapped to the persistent volume claim.
+The deployment manifest [mysql-deployment.yaml](part-1/mysql-deployment.yaml) creates a persistent volume claim and a service, and runs MySQL in a pod using a volume mapped to the persistent volume claim.
 
 Deploy the MySQL instance:
 
@@ -272,7 +272,7 @@ Deploy the MySQL instance:
 kubectl apply -f ./part-1/mysql-deployment.yaml
 ```
 
-You can use the output from `kubectl` to show the host path of the persistent volume, which will be a path on your host OS. That path stores all the data files MySQL writes:
+You can use the output from `kubectl` to show the host path of the persistent volume, which will be a path on your laptop OS. That path stores all the data files that MySQL writes to the path `/var/lib/mysql` inside the container:
 
 ```
 path=$(kubectl get pv -o json | jq -r '.items[0].spec.hostPath.path')
@@ -300,7 +300,7 @@ kubectl delete deployment mysql
 kubectl apply -f ./part-1/mysql-deployment.yaml
 ```
 
-Run another interactive container, and you can check the user you created using the previous deployment is still there in the database:
+Run another interactive container, and you can check that the user you created using the previous deployment is still there in the database:
 
 ```
 kubectl run -it --rm --image=mysql:8.0.11 --restart=Never mysql-client -- mysql -h mysql -ppassword
@@ -332,7 +332,7 @@ First you need to set your Helm home path, using an environment variable.
 
 > On Windows run `$env:HELM_HOME=$(~/helm)`
 
-Then initialize Helm, which deploys the Tiller back-end to Kubernetes to the `kube-system` namespace:
+Then initialize Helm, which deploys the Tiller back-end to Kubernetes, using the `kube-system` namespace:
 
 ```
 helm init --debug
@@ -342,7 +342,7 @@ kubectl get svc -n kube-system
 
 ### 4.2 - Deploy the Docker Registry
 
-Now you can use Helm to deploy a local registry, using the open-source [Docker Registry](). This configuration exposes a load balancer for the registry, and uses a persistent volume fort storage:
+Now you can use Helm to deploy a local registry, using the open-source [Docker Registry](https://docs.docker.com/registry/). This configuration exposes a load balancer for the registry, and uses a persistent volume fort storage:
 
 ```
 helm install --name registry \
@@ -353,13 +353,13 @@ helm install --name registry \
 
 ### 4.3 - Push an image to the local registry
 
-When the application deploys, the Docker Registry API will be listening on port `50005 on your host. You can check the API using`curl`:
+When the application deploys, the Docker Registry API will be listening on port `5000` on your host. You can check the API using `curl`:
 
 ```
 curl http://localhost:5000/v2/_catalog
 ```
 
-And you can tag and push images to the registry. Remember that your Linux Docker engine is running in a VM on Docker for Mac or Docker for Windows, so you need to use the `docker.for.X.localhost` domain for the registry - which we added to the insecure registries list at the beginng of the workshop.
+And you can tag and push images to the registry. Remember that your Linux Docker engine is running in a VM on Docker for Mac or Docker for Windows, so you need to use the `docker.for.***.localhost` domain for the registry - which we added to the insecure registries list at the beginng of the workshop.
 
 First store the registry address in an environment variable, to make it easier to work with.
 
@@ -367,7 +367,7 @@ First store the registry address in an environment variable, to make it easier t
 
 > On Windows run `$env:=REGISTRY_DOMAIN=docker.for.win.localhost`
 
-Now pull a nice small image to use, and tag it with your domain:
+Now pull a nice small image to use, and tag it with your domain and a new repository name:
 
 ```
 docker image pull alpine:3.7
@@ -385,7 +385,7 @@ curl http://localhost:5000/v2/_catalog
 
 ### 4.4 - Clean up
 
-You can use Helm to remove the deployment, optionally with the `purge` flag to remove all traces:
+Use Helm to remove the deployment, optionally with the `purge` flag to remove all traces:
 
 ```
 helm delete --purge registry
