@@ -2,15 +2,17 @@
 
 Docker Enterprise Edition (EE) is a container platform which provides:
 
-* production support across multiple operating systems (Windows and Linux)
-* a secure image registry with image scanning and signing
-* a multi-orchectrator management layer (with Kubernetes and Docker swarm)
+* production support for containers across multiple operating systems (Windows and the top Linux distros)
+* a secure image registry with image scanning, signing and promotion policies
+* a multi-orchectrator management plane, supporting Kubernetes and Docker swarm
 
 In this part of the workshop you'll start using Docker Trusted Registry (DTR) and Universal Control Plane (UCP) to build and deploy a distributed application on Kubernetes. You'll use a hosted lab environment called [Play with Docker (PWD)](https://labs.play-with-docker.com/).
 
+> The hosted Docker EE environment is available if you're at a Docker-sponsored workshop, where you'll be given the URL for the labs. If you're not at a workshop you can sign up for a [Docker EE trial](https://trial.docker.com).
+
 ## Goals
 
-* Run Kubernetes on Docker EE with Universal Control Plane (UCP)
+* Understand how Kubernetes works on Docker EE with Universal Control Plane (UCP)
 * Configure repositories and store images in Docker Trusted Registry (DTR)
 * Deploy Docker stacks to Kubernetes using UCP with images in DTR
 * Manage remote Kubernetes deployments on Docker EE from your laptop
@@ -24,11 +26,11 @@ In this part of the workshop you'll start using Docker Trusted Registry (DTR) an
 
 ## <a name="1"></a> 1 - Set up your PWD environment
 
-This lab is only available in a pre-arranged workshop. That may happen through a [Docker Meetup](https://events.docker.com/chapters/), a conference workshop, or an arrangements between Docker and your company. The workshop leader will provide you with the URL to a workshop environment that includes [Docker EE](https://www.docker.com/enterprise-edition):
+You'll have your own lab environment at a pre-arranged workshop. That may happen through a [Docker Meetup](https://events.docker.com/chapters/), a conference workshop, or an arrangements between Docker and your company. The workshop leader will provide you with the URL to a workshop environment that includes [Docker EE](https://www.docker.com/enterprise-edition):
 
 ![](img/part-2/pwd-home.jpg)
 
-There are three main components to the Play With Docker (PWD) interface.
+There are three main components to the Play with Docker (PWD) interface.
 
 ### 1.1 - Clone the lab repo on a worker node
 
@@ -41,7 +43,7 @@ By clicking a node name on the left, the console window will be connected to tha
 
 ![](./img/part-2/pwd-console.jpg)
 
-Start by connecting to `worker3` and cloning the source for the application:
+Start by connecting to `worker3` and cloning the source for this workshop and for the application you'll be building:
 
 ```
 mkdir scm && cd scm
@@ -63,32 +65,33 @@ The dynamic URLs are very long, so store the _DTR hostname_ field in an environm
 export DTR_HOST=<your-DTR-hostname>
 ```
 
+> Make sure you use **your** DTR hostname from the PWD session panel.
+
 ### 3.3 - Access to Universal Control Plane (UCP) and Docker Trusted Registry (DTR)
 
-Additionally, the PWD screen provides you with a one-click access to the Universal Control Plane (UCP)
-web-based management interface as well as the Docker Trusted Registry (DTR) web-based management interface. Clicking on either the `UCP` or `DTR` button will bring up the respective server web interface in a new tab.
+PWD also has links to the Universal Control Plane (UCP) management UI as well as the Docker Trusted Registry (DTR) UI. Clicking on either the `UCP` or `DTR` button will bring up the respective server web interface in a new tab.
 
 Click on the UCP link to open Universal Control Plane. The lab uses self-signed HTTPS certificates, so you'll see a connection warning which you can ignore (add an exception to the site in your browser).
 
-Log in to UCP using the username and password from the PWD session information:
+Log in to UCP using the username and password from your PWD session information:
 
 ![](./img/part-2/ucp-login.jpg)
 
-You'll see the UCP homepage where you can navigate around the cluster. Now switch back to the PWD session and click the link to open DTR. DTR shares authentication with UCP, so you are logged into DTR with the same user credentials.
+You'll see the UCP homepage where you can navigate around the cluster. Now switch back to the PWD session and click the link to open DTR. DTR shares authentication with UCP, so you are already logged into DTR with the same user credentials.
 
 ## <a name="2"></a> 2 - Using Docker Trusted Registry
 
-Security scanning is an optional feature in DTR. We'll enable it now so we can scan images that we push.
+Security scanning is an optional feature in DTR. We'll enable it now so we can scan images that we push, to find any security issues in the image binaries.
 
 Click on _System_ in the left-hand nav, and then _Security_ from the top nav. Click _Enable scanning_ and select the online sync option:
 
 ![](./img/part-2/dtr-enable-image-scanning.jpg)
 
-DTR downloads a database of known vulnerabilities, which it will scan for in images.
+DTR downloads a database of known vulnerabilities, which it will use to scan images. DTR will sync its vulnerability database with a live database maintained by Docker, Inc.
 
 ### 2.1 - Create organization, repository, teams and users
 
-DTR provides fine-grained access control over who can see repositories, and push and pull images. In this step you'll set up a repo using the web UI, and create some team and users.
+DTR provides fine-grained access control over who can see repositories, and push and pull images. In this step you'll set up a repo using the web UI, and create some teams and users.
 
 Click the _Organizations_ link in the left nav, and click _New organization_:
 
@@ -108,7 +111,7 @@ Name the repository `hybrid-app-web` and select the _Scan on push_ option:
 
 ![](./img/part-2/dtr-new-repo-2.jpg)
 
-In a production environment you would link UCP to your existing enterprise auth store - using LDAP or Active Directory. UCP can also manage its own users, and in DTR you can create users and teams.
+In a production environment you would link UCP to your existing enterprise credential store - using LDAP or Active Directory. UCP can also manage its own users, and in DTR you can create users and teams which are then available in UCP.
 
 Click on the plus sign in the _Teams_ list and add a new team called `ci`:
 
@@ -118,21 +121,21 @@ Select the `ci` team, click _Add user_ and add a new user called `jenkins` (use 
 
 ![](./img/part-2/dtr-new-user.jpg)
 
-The `ci` team represents service accounts which will have permission to push images as part of a CI process. There will also be humans working on the project who will only have pull access.
+The `ci` team represents service accounts which will have permission to push images as part of a CI pipeline. There will also be humans working on the project who will only have pull access.
 
 Add a new team called `humans`:
 
 ![](./img/part-2/dtr-new-team-2.jpg)
 
-And a new user in the `humans` team:
+And a new user in the `humans` team (use a username and password you can remember later):
 
 ![](./img/part-2/dtr-new-user-2.jpg)
 
-Now you have an organization and repository, and authentication configured for some users. You can configure access rules in the DTR UI, but we'll use the API for that so you see how you script project access.
+Now you have an organization and repository, and authentication configured for some users. You can configure access rules in the DTR UI, but DTR also has an API. You'll use that next so you see how to script project access, which might be part of a project on-boarding process.
 
 ### 2.2 - Script repository access using the DTR API
 
-You're still logged into DTR as the admin user, so you're account has rights over all organizations and repositories. To work with the DTR API you need to generate an API key.
+You're still logged into DTR as the admin user, so your account has rights over all organizations and repositories. To work with the DTR API you need to generate an API key for your account.
 
 Click the username dropdown in the top right of the screen and select _Profile_:
 
@@ -146,22 +149,22 @@ Use the description `API` and click _Create_:
 
 ![](./img/part-2/dtr-new-access-token-2.jpg)
 
-You'll see a generated access token, copy this to the clipboard:
+You'll see a generated access token - this is your only chance to see this key - copy it to the clipboard:
 
 ![](./img/part-2/dtr-new-access-token-3.jpg)
 
-Now switch back to your PWD session and the console for worker3. Add your DTR credentials - the `admin` username and your new API key - as environment variables:
+Now switch back to your PWD session and the console for `worker3`. Add your DTR credentials - the `admin` username from session information, and your new API key - as environment variables:
 
 ```
 export DTR_USERNAME=<your-DTR-admin-username>
 export DTR_API_KEY=<your-api-key>
 ```
 
-You should now have three DTR environment variables in your session:
+You should now have three DTR environment variables in your session, which you can check with `printenv | grep DTR`:
 
 ![](./img/part-2/pwd-dtr-envs.jpg)
 
-Now switch to the workshop source code and run two scripts which use the DTR API. The first creates more image repositories, and the second grants access to the teams:
+Now switch to the workshop source code and run two scripts which use the DTR API. The first creates more image repositories, and the second grants repository access to the teams:
 
 ```
 cd ~/scm/docker-kube-workshop
@@ -171,7 +174,7 @@ cd ~/scm/docker-kube-workshop
 ./part-2/dtr-02-set-repo-access.sh
 ```
 
-Browse back to DTR, open the `dockersamples` organization and check the repository access for the `ci` team - you'll see the team has read-write access to all three repositories:
+Browse back to DTR, open the `dockersamples` organization and check the repository access for the `ci` team - you'll see the team has read-write access to all three repositories, which means CI users can push and pull images:
 
 ![](./img/part-2/dtr-repo-access-team.jpg)
 
@@ -197,7 +200,7 @@ It will take a few minutes to pull all the base images and build the apps. You c
 * [Dockerfile for the Java web app](https://github.com/dockersamples/hybrid-app/blob/master/java-app-v2/Dockerfile)
 * [Dockerfile for the .NET Core REST API](https://github.com/dockersamples/hybrid-app/blob/master/dotnet-api/Dockerfile)
 
-When the image have built on your worker node, login to DTR with your human account and try to push the images:
+When the image have built on your worker node, login to DTR **with your human account** and try to push the images:
 
 ```
 docker login $DTR_HOST
@@ -209,7 +212,7 @@ docker login $DTR_HOST
 
 In production you'd have a CI server running the build and push scripts, and the service account credentials for DTR would be securely stored in the CI server.
 
-In this lab you'll just login to DTR as the CI user directly, anbd then you can successfully push images:
+In this lab you'll just login to DTR as the CI user directly, and then you have access to push images:
 
 ```
 docker login $DTR_HOST --username jenkins
@@ -217,7 +220,7 @@ docker login $DTR_HOST --username jenkins
 ./scripts/02-ship.sh
 ```
 
-Now the images are successfully pushed to DTRL:
+Now the images are successfully pushed to DTR:
 
 ![](./img/part-2/pwd-push-to-dtr.jpg)
 
@@ -227,13 +230,13 @@ Switch back to the DTR UI, open one of the repositories and click _Images_ in th
 
 ## <a name="3"></a> 3 - Deploy and upgrade an application using Universal Control Plane
 
-In Part 1 you deployed applications as Docker stakcs running on Kubernetes in your local Docker environment. Docker EE supports the same functionality using Universal Control Plane. In this section you'll deploy the hybrid app to Kubernetes on UCP, using a Docker Compose file.
+In [Part 1](part-1.md) you deployed applications as Docker stakcs running on Kubernetes in your local Docker desktop environment. Docker EE supports the same functionality using Universal Control Plane. In this section you'll deploy the hybrid app to Kubernetes on UCP, using a Docker Compose file.
 
 ### 3.1 - Deploy V1 of the app to Kubernetes
 
-There's a [compose file for V1 of the app](part-2/hybrid-app-v1.yml), where the Java web app connects directly to the MySQL database. The compose file uses an environment variable for the DTR host, so first youi need to use `docker-compoose config` to evaluate the variable.
+There's a [compose file for V1 of the app](part-2/hybrid-app-v1.yml), where the Java web app connects directly to the MySQL database. The compose file uses an environment variable for the DTR host, so first you need to use `docker-compose config` to interpolate the variable.
 
-On your worker3 node run:
+On your `worker3` node run:
 
 ```
 cd ~/scm/docker-kube-workshop/part-2
@@ -277,13 +280,13 @@ Click the link where the target port is `8080`, and then browse to `/java-web/` 
 
 ![](./img/part-2/signup-homepage.jpg)
 
-Next you'll upgrade the app, adding a REST API which the web app uses to access the database.
+Next you'll upgrade the app to version 2, adding a REST API which the web app uses to access the database.
 
 ### 3.2 - Deploy V2 of the app by upgrading the stack
 
 You'll need to use Docker Compose again to expand the DTR hostname in the compose file for V2 of the app.
 
-On your worker3 node run:
+On your `worker3` node run:
 
 ```
 cd ~/scm/docker-kube-workshop/part-2
@@ -311,9 +314,9 @@ Back in the _Kubernetes...Load Balancers_ list you can navigate to the Java web 
 
 ![](./img/part-2/ucp-kube-load-balancers-v2.jpg)
 
-The .NET API writes some basic log entries when it starts. You manage containers in UCP in the same way, whether they're in Kubernetes pods on Linux nodes, or swarm containers on Windows nodes.
+The .NET API writes some basic log entries when it starts. You manage containers in UCP in the same way, whether they're in Kubernetes pods on Linux nodes, or swarm services on Windows nodes.
 
-From _Shared Resources...Containers_ you see the list of running containers, you can select the .NET API and click _View Logs_:
+From _Shared Resources...Containers_ you see the list of all running containers, acrodd all the orchestrators. You can select the .NET API and click _View Logs_:
 
 ![](./img/part-2/ucp-container-logs.jpg)
 
@@ -323,7 +326,7 @@ The app logs are shown here, and from the container list you can also connect to
 
 ## <a name="3"></a> 4 - Manage Kubernetes on Docker EE from Docker for Mac and Docker for Windows
 
-You can remotely manage your Docker EE cluster by downloading a client bundle from UCP. Communication between your client and UCP is secured with mutual TLS, and the client bundle contains certificates and setup scripts.
+You can remotely manage your Docker EE cluster by downloading a client bundle from UCP. Communication between your client and UCP is secured with mutual TLS, and the client bundle contains certificates and setup scripts. Your client certificate identifies your account and enforces access control with the same permissions as in the UI.
 
 In UCP click your username in the left nav and select _My Profile_:
 
@@ -376,6 +379,8 @@ dotnet-api   1         1         1            1           15m
 java-app     1         1         1            1           26m
 ```
 
+And you can use `docker stack deploy` to deploy and upgrade applications on the Docker EE cluster.
+
 ## Up Next
 
-On to [Part 3](./part-3.md) where we'll look at securing deployments with Docker EE, including image management with DTR and role-based access control in UCP.
+On to [Part 3](./part-3.md) where you'll learn how to secure deployments with Docker EE, including image management with DTR and role-based access control in UCP.
