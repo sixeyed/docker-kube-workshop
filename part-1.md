@@ -332,10 +332,10 @@ First you need to set your Helm home path, using an environment variable.
 
 > On Windows run `$env:HELM_HOME=$(~/helm)`
 
-Then initialize Helm, which deploys the Tiller back-end to Kubernetes, using the `kube-system` namespace:
+Then initialize Helm using the default [Kubernetes service account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/). This deploys the Tiller back-end to Kubernetes in the `kube-system` namespace:
 
 ```
-helm init --debug
+helm init --service-account default --debug
 
 kubectl get svc -n kube-system
 ```
